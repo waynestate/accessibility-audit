@@ -1,0 +1,19 @@
+{
+    "name": "accessibility-aduit",
+    "version": "0.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "audit": "node src/audit.js"
+    },
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "axe-webdriverjs": "^2.2.0",
+        "axios": "^0.19.0",
+        "chromedriver": "^74.0.0",
+        "json2csv": "^4.5.1",
+        "selenium-webdriver": "^4.0.0-alpha.1"
+    }
+}
+  
