@@ -32,12 +32,27 @@ const setupDriver = selenium => {
 };
 
 function getUrls(menu, site) {
-    const urls = [];
+    let urls = [];
 
-    for (var item in menu) {
-        urls.push('http://'+site+'.wayne.local'+menu[item].relative_url);
-    }
-    
+    const parseElements = items => {
+        items.forEach(element => {
+            url = 'http://'+site+'.wayne.local'+element.relative_url;
+
+            // Only push in unique URLs
+            if (urls.indexOf(url) === -1) {
+                urls.push(url);
+            }
+
+            // Recurse through submenu items
+            const submenu_items = Object.values(element.submenu);
+            if (submenu_items.length > 0) {
+                parseElements(submenu_items);
+            }
+        });
+    };
+
+    parseElements(menu);
+
     return urls;
 };
 
@@ -75,11 +90,13 @@ async function analyzePages(urls) {
                 if (errors.length > 0) {
                     // Build the report
                     errors.forEach(function (error) {
+                        console.log(error);
                         error.nodes.forEach(function (node) {
                             violation = {
-                                "description" : error.description,
-                                "html" : node.html,
-                                "target" : node.target,
+                                "url": url,
+                                "description": error.description,
+                                "html": node.html,
+                                "target": node.target,
                             }
 
                             report.push(violation);
@@ -125,10 +142,10 @@ if(fs.existsSync(filename)) {
 }
 
 // Get the site menu
-const menu = JSON.parse(fs.readFileSync('/vagrant/'+site+'/styleguide/menu.json'));
+const menu = Object.values(JSON.parse(fs.readFileSync('/vagrant/'+site+'/styleguide/menu.json')));
 
 // Get an array of URLs to analyze
-const urls = getUrls(menu['101']['submenu'], site);
+const urls = getUrls(menu, site);
 
 // Analyze all pages
 const analyze = analyzePages(urls);
