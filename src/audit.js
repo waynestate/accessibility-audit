@@ -11,16 +11,13 @@ if(typeof site === 'undefined') {
     return 0;
 }
 
-const menu = JSON.parse(fs.readFileSync('/vagrant/'+site+'/styleguide/menu.json'));
+function removeExceptions(items) {
+    let config = JSON.parse(fs.readFileSync('/vagrant/'+site+'/axe.config.json'));
+    let exceptions = config.base.concat(config.local);
 
-const removeExceptions = items => {
-    let exceptions = [
-        "#q" // https://www.w3.org/WAI/tutorials/forms/labels/#hiding-label-text
-    ];
+    items = items.filter(item => ! exceptions.includes(item.target[0]));
 
-    return items.filter(
-        item => item.nodes.filter(node => !exceptions.includes(node.target[0])).length !== 0
-    );
+    return items;
 };
 
 const setupDriver = selenium => {
@@ -56,33 +53,56 @@ async function analyzePages(urls) {
 
         // Check for accessibility errors
         await AxeBuilder(driver)
+            .options({
+                runOnly: {
+                  type: 'tag',
+                  values: ['wcag2a', 'wcag21aa', 'best-practice']
+                },
+                'rules': {
+                  'color-contrast': { enabled: true }
+                },
+                resultTypes: ['violations', 'incomplete'],
+                reporter: 'v2',
+              })
             .analyze()
             .then(function (results) {
-                if (results.violations.length > 0) {
-                    errors = removeExceptions(results.violations);
+                // Combine incomplete (needs review) and violations
+                errors = results.violations.concat(results.incomplete);
 
-                    if(errors.length > 0) {
-                        // Append values for the report
-                        for (let [key, error] of Object.entries(errors)) {
-                            errors[key].failureSummary = error.nodes[0].failureSummary;
-                            errors[key].target = error.nodes[0].target;
-                            errors[key].url = url;
-                            delete errors[key].nodes;
-                        }
+                // Errors to report
+                report = [];
 
+                if (errors.length > 0) {
+                    // Build the report
+                    errors.forEach(function (error) {
+                        error.nodes.forEach(function (node) {
+                            violation = {
+                                "description" : error.description,
+                                "html" : node.html,
+                                "target" : node.target,
+                            }
+
+                            report.push(violation);
+                        });
+                    });
+
+                    // Handle exceptions to the report
+                    report = removeExceptions(report);
+
+                    if(report.length > 0) {
                         const parser = new Parser();
-                        const csv = parser.parse(errors);
-
-                        console.log(errors.length+' violations found.');
-
+                        const csv = parser.parse(report);
+    
+                        console.log(report.length+' violations found.');
+    
                         fs.appendFile(filename, csv, function(err) {
                             if(err) {
                                 return console.error(err);
                             }
                         });
-                    }
-                } else {
-                    console.log('0 violations found.');
+                    } else {
+                        console.log('Pass');
+                    }     
                 }
 
                 driver.quit();
@@ -103,6 +123,9 @@ if(fs.existsSync(filename)) {
         if(err) throw err;
     });
 }
+
+// Get the site menu
+const menu = JSON.parse(fs.readFileSync('/vagrant/'+site+'/styleguide/menu.json'));
 
 // Get an array of URLs to analyze
 const urls = getUrls(menu['101']['submenu'], site);
