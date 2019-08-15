@@ -79,6 +79,7 @@ async function analyzePages(urls) {
                 resultTypes: ['violations', 'incomplete'],
                 reporter: 'v2',
               })
+            .exclude(['iframe'])
             .analyze()
             .then(function (results) {
                 // Combine incomplete (needs review) and violations
@@ -90,7 +91,6 @@ async function analyzePages(urls) {
                 if (errors.length > 0) {
                     // Build the report
                     errors.forEach(function (error) {
-                        console.log(error);
                         error.nodes.forEach(function (node) {
                             violation = {
                                 "url": url,
