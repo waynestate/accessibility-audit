@@ -3,6 +3,7 @@ const selenium = require("selenium-webdriver"),
     fs = require('fs'),
     { Parser } = require('json2csv'),
     site = process.argv[2],
+    single = process.argv[3],
     filename = 'audit-'+site+'.csv';
 
 if(typeof site === 'undefined') {
@@ -79,7 +80,8 @@ async function analyzePages(urls) {
                 resultTypes: ['violations', 'incomplete'],
                 reporter: 'v2',
               })
-            .exclude(['iframe'])
+            .exclude('iframe') // Since the content inside them can be dyanmic and hard to individually filter
+            .exclude('#hero') // Since our hero area has a gradient and dynamic content it is hard to individually filter
             .analyze()
             .then(function (results) {
                 // Combine incomplete (needs review) and violations
@@ -145,7 +147,11 @@ if(fs.existsSync(filename)) {
 const menu = Object.values(JSON.parse(fs.readFileSync('/vagrant/'+site+'/styleguide/menu.json')));
 
 // Get an array of URLs to analyze
-const urls = getUrls(menu, site);
+if(typeof single === 'undefined') {
+    urls = getUrls(menu, site);
+} else {
+    urls = [single];
+}
 
 // Analyze all pages
 const analyze = analyzePages(urls);
