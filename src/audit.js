@@ -97,6 +97,7 @@ async function analyzePages(urls) {
                             violation = {
                                 "url": url,
                                 "description": error.description,
+                                "message": node.any[0].message,
                                 "html": node.html,
                                 "target": node.target,
                             }
