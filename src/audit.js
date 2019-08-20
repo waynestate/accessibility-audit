@@ -15,9 +15,20 @@ if(typeof site === 'undefined') {
 function removeExceptions(items) {
     if (fs.existsSync('/vagrant/'+site+'/axe.config.json')) {
         let config = JSON.parse(fs.readFileSync('/vagrant/'+site+'/axe.config.json'));
-        let exceptions = config.base.concat(config.local);
+        let exceptions = config.targets;
+        let tags = Object.keys(exceptions);
+        
+        items = items.filter(function (item) {
+            filter = true;
 
-        items = items.filter(item => ! exceptions.includes(item.target[0]));
+            tags.forEach(function (tag) {
+                if(item.tags.includes(tag) && (exceptions[tag].includes(item.target) || exceptions[tag].includes(item.related_target))) {
+                   filter = false;
+                }
+            });
+
+            return filter;
+        });
     }
 
     return items;
@@ -83,7 +94,6 @@ async function analyzePages(urls) {
                 reporter: 'v2',
               })
             .exclude('iframe') // Since the content inside them can be dyanmic and hard to individually filter
-            .exclude('#hero') // Since our hero area has a gradient and dynamic content it is hard to individually filter
             .analyze()
             .then(function (results) {
                 // Combine incomplete (needs review) and violations
@@ -96,20 +106,27 @@ async function analyzePages(urls) {
                     // Build the report
                     errors.forEach(function (error) {
                         error.nodes.forEach(function (node) {
+                            related_target = '';
+                            message = '';
+
                             if(typeof node.all[0] !== 'undefined') {
+                                related_target = '';
                                 message = node.all[0].message;
                             } else if (typeof node.any[0] !== 'undefined') {
+                                if(node.any[0].relatedNodes.length > 0) {
+                                    related_target = node.any[0].relatedNodes[0].target[0];
+                                }
                                 message = node.any[0].message;
-                            } else {
-                                message = '';
                             }
-
+                            
                             violation = {
                                 "url": url,
                                 "description": error.description,
                                 "message": message,
                                 "html": node.html,
-                                "target": node.target,
+                                "target": node.target[0],
+                                "related_target": related_target,
+                                "tags": error.tags
                             }
 
                             report.push(violation);
