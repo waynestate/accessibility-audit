@@ -13,10 +13,12 @@ if(typeof site === 'undefined') {
 }
 
 function removeExceptions(items) {
-    let config = JSON.parse(fs.readFileSync('/vagrant/'+site+'/axe.config.json'));
-    let exceptions = config.base.concat(config.local);
+    if (fs.existsSync('/vagrant/'+site+'/axe.config.json')) {
+        let config = JSON.parse(fs.readFileSync('/vagrant/'+site+'/axe.config.json'));
+        let exceptions = config.base.concat(config.local);
 
-    items = items.filter(item => ! exceptions.includes(item.target[0]));
+        items = items.filter(item => ! exceptions.includes(item.target[0]));
+    }
 
     return items;
 };
@@ -94,10 +96,18 @@ async function analyzePages(urls) {
                     // Build the report
                     errors.forEach(function (error) {
                         error.nodes.forEach(function (node) {
+                            if(typeof node.all[0] !== 'undefined') {
+                                message = node.all[0].message;
+                            } else if (typeof node.any[0] !== 'undefined') {
+                                message = node.any[0].message;
+                            } else {
+                                message = '';
+                            }
+
                             violation = {
                                 "url": url,
                                 "description": error.description,
-                                "message": node.any[0].message,
+                                "message": message,
                                 "html": node.html,
                                 "target": node.target,
                             }
