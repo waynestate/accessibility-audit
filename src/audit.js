@@ -110,7 +110,9 @@ async function analyzePages(urls) {
                             message = '';
 
                             if(typeof node.all[0] !== 'undefined') {
-                                related_target = '';
+                                if(node.all[0].relatedNodes.length > 0) {
+                                    related_target = node.all[0].relatedNodes[0].target[0];
+                                }
                                 message = node.all[0].message;
                             } else if (typeof node.any[0] !== 'undefined') {
                                 if(node.any[0].relatedNodes.length > 0) {
