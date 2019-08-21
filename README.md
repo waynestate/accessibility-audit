@@ -1,6 +1,6 @@
 # Accessibility Audit
 
-Takes in a list of URLs to audit for accessibility issues.
+Takes in a list of URLs from a (base site)[https://github.com/waynestate/base-site] to check for accessibility issues.
 
 ## Installation
 
@@ -9,4 +9,5 @@ Takes in a list of URLs to audit for accessibility issues.
 
 ## Usage
 
-1. `yarn run audit`
+1. All pages: `yarn run audit base`
+1. Individual page: `yarn run audit https://base.wayne.edu/styleguide`
