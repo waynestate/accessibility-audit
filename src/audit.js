@@ -113,11 +113,13 @@ async function analyzePages(urls) {
                                 if(node.all[0].relatedNodes.length > 0) {
                                     related_target = node.all[0].relatedNodes[0].target[0];
                                 }
+                                
                                 message = node.all[0].message;
                             } else if (typeof node.any[0] !== 'undefined') {
                                 if(node.any[0].relatedNodes.length > 0) {
                                     related_target = node.any[0].relatedNodes[0].target[0];
                                 }
+
                                 message = node.any[0].message;
                             }
                             
